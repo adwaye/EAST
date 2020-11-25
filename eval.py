@@ -10,7 +10,7 @@ import lanms
 
 tf.app.flags.DEFINE_string('test_data_path', './demo_images', '')
 tf.app.flags.DEFINE_string('gpu_list', '0', '')
-tf.app.flags.DEFINE_string('checkpoint_path', '/East', '')
+tf.app.flags.DEFINE_string('checkpoint_path', './East', '')
 tf.app.flags.DEFINE_string('output_dir', './results', '')
 tf.app.flags.DEFINE_bool('no_write_images', True, 'do not write images')
 
