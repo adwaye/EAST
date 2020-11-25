@@ -164,6 +164,7 @@ def draw_illu(illu, rst):
         d = np.array([t['x0'], t['y0'], t['x1'], t['y1'], t['x2'],
                       t['y2'], t['x3'], t['y3']], dtype='int32')
         d = d.reshape(-1, 2)
+
         cv2.polylines(illu, [d], isClosed=True, color=(255, 255, 0))
     return illu
 
@@ -210,7 +211,7 @@ def index_post():
 def main():
     global checkpoint_path
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', default=16006, type=int)
+    parser.add_argument('--port', default=6006, type=int)
     parser.add_argument('--checkpoint_path', default=checkpoint_path)
     args = parser.parse_args()
     checkpoint_path = args.checkpoint_path
