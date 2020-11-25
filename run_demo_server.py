@@ -191,7 +191,7 @@ def save_result(img, rst):
 
 
 
-checkpoint_path = './east_icdar2015_resnet_v1_50_rbox'
+checkpoint_path = './east'
 
 
 @app.route('/', methods=['POST'])
