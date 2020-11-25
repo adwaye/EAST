@@ -191,7 +191,7 @@ def save_result(img, rst):
 
 
 
-checkpoint_path = './east'
+checkpoint_path = './East'
 
 
 @app.route('/', methods=['POST'])
