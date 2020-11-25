@@ -210,7 +210,7 @@ def index_post():
 def main():
     global checkpoint_path
     parser = argparse.ArgumentParser()
-    parser.add_argument('--port', default=8769, type=int)
+    parser.add_argument('--port', default=16006, type=int)
     parser.add_argument('--checkpoint_path', default=checkpoint_path)
     args = parser.parse_args()
     checkpoint_path = args.checkpoint_path
@@ -220,7 +220,7 @@ def main():
             'Checkpoint `{}` not found'.format(args.checkpoint_path))
 
     app.debug = False  # change this to True if you want to debug
-    app.run('0.0.0.0', args.port)
+    app.run('127.1.0.0', args.port)
 
 if __name__ == '__main__':
     main()
