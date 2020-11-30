@@ -8,10 +8,10 @@ import tensorflow as tf
 import locality_aware_nms as nms_locality
 import lanms
 
-tf.app.flags.DEFINE_string('test_data_path', './demo_images', '')
+tf.app.flags.DEFINE_string('test_data_path', './mnt/remote/demo_images', '')
 tf.app.flags.DEFINE_string('gpu_list', '0', '')
 tf.app.flags.DEFINE_string('checkpoint_path', './East', '')
-tf.app.flags.DEFINE_string('output_dir', './results', '')
+tf.app.flags.DEFINE_string('output_dir', '/mnt/remote/results', '')
 tf.app.flags.DEFINE_bool('no_write_images', False, 'do not write images')
 
 
