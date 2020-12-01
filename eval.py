@@ -226,6 +226,7 @@ def main(argv=None):
                             os.path.basename(im_fn).split('.')[0]))
 
                     with open(res_file, 'w') as f:
+                        im = np.ascontiguousarray(im,dtype=np.uint8)
                         for box in boxes:
                             # to avoid submitting errors
                             box = sort_poly(box.astype(np.int32))
