@@ -8,7 +8,7 @@ import tensorflow as tf
 import locality_aware_nms as nms_locality
 import lanms
 
-tf.app.flags.DEFINE_string('test_data_path', './mnt/remote/demo_images', '')
+tf.app.flags.DEFINE_string('test_data_path', '/mnt/remote/demo_images', '')
 tf.app.flags.DEFINE_string('gpu_list', '0', '')
 tf.app.flags.DEFINE_string('checkpoint_path', './East', '')
 tf.app.flags.DEFINE_string('output_dir', '/mnt/remote/results', '')
@@ -193,7 +193,7 @@ def main(argv=None):
                             ))
                             # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
                             cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
-                            cv2.rotate(im,cv2.cv2.ROTATE_90_CLOCKWISE)
+
 
                 print('running on rotated image')
                 start_time = time.time()
@@ -236,10 +236,14 @@ def main(argv=None):
                             cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
 
 
-
                 if not FLAGS.no_write_images:
                     img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
                     cv2.imwrite(img_path, im[:, :, ::-1])
 
 if __name__ == '__main__':
     tf.app.run()
+
+
+    #folder will be like patient name study number and then will have hands, feet inside.
+    #update the script to read it recrursively and only save under the study number folder
+    #need to locate hands only, so write regex to filter tings out
