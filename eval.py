@@ -241,7 +241,7 @@ def main(argv=None):
                             print("==============================SHAPE====================")
                             print(im.shape)
                             print(im[:,:,::-1].shape)
-                            cv2.fillConvexPoly(im[:,:,::-1].astype(np.int32),[box.astype(np.int32).reshape((-1,1,2))],
+                            im = cv2.fillPoly(im[:,:,::-1].astype(np.int32),[box.astype(np.int32).reshape((-1,1,2))],
                                                color=(255,
                                                                                                               255,0))
 
