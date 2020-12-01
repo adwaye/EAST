@@ -273,7 +273,7 @@ def main(argv=None):
                         res     = re.search('\d{4}',os.path.basename(im_fn))
                         if res is not None:
                             year =  res.group(0)
-                            file_name = pat_id+'_'+year+im_fn.split('.')[-1]
+                            file_name = pat_id+'_'+year+'.'+im_fn.split('.')[-1]
                             img_path  = os.path.join(FLAGS.output_dir, file_name)
 
                     print('rotating image back')
