@@ -192,51 +192,53 @@ def main(argv=None):
                                 box[0, 0], box[0, 1], box[1, 0], box[1, 1], box[2, 0], box[2, 1], box[3, 0], box[3, 1],
                             ))
                             # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
+
+                            cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
+
+
+                print('running on rotated image')
+                start_time = time.time()
+                im = cv2.rotate(im,cv2.cv2.ROTATE_90_CLOCKWISE)
+                im_resized, (ratio_h, ratio_w) = resize_image(im)
+
+                timer = {'net': 0, 'restore': 0, 'nms': 0}
+                start = time.time()
+                score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
+                timer['net'] = time.time() - start
+
+                boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
+                print('{} : net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
+                    im_fn, timer['net']*1000, timer['restore']*1000, timer['nms']*1000))
+
+                if boxes is not None:
+                    boxes = boxes[:, :8].reshape((-1, 4, 2))
+                    boxes[:, :, 0] /= ratio_w
+                    boxes[:, :, 1] /= ratio_h
+
+                duration = time.time() - start_time
+                print('[timing] {}'.format(duration))
+
+                # save to file
+                if boxes is not None:
+                    res_file = os.path.join(
+                        FLAGS.output_dir,
+                        '{}.txt'.format(
+                            os.path.basename(im_fn).split('.')[0]))
+
+                    with open(res_file, 'w') as f:
+                        for box in boxes:
+                            # to avoid submitting errors
+                            box = sort_poly(box.astype(np.int32))
+                            if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
+                                continue
+                            f.write('{},{},{},{},{},{},{},{}\r\n'.format(
+                                box[0, 0], box[0, 1], box[1, 0], box[1, 1], box[2, 0], box[2, 1], box[3, 0], box[3, 1],
+                            ))
+                            # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
                             print("==============================SHAPE====================")
                             print(im.shape)
-                            cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
                             print(im[:,:,::-1].shape)
-
-                # print('running on rotated image')
-                # start_time = time.time()
-                # im = cv2.rotate(im,cv2.cv2.ROTATE_90_CLOCKWISE)
-                # im_resized, (ratio_h, ratio_w) = resize_image(im)
-                #
-                # timer = {'net': 0, 'restore': 0, 'nms': 0}
-                # start = time.time()
-                # score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
-                # timer['net'] = time.time() - start
-                #
-                # boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
-                # print('{} : net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
-                #     im_fn, timer['net']*1000, timer['restore']*1000, timer['nms']*1000))
-                #
-                # if boxes is not None:
-                #     boxes = boxes[:, :8].reshape((-1, 4, 2))
-                #     boxes[:, :, 0] /= ratio_w
-                #     boxes[:, :, 1] /= ratio_h
-                #
-                # duration = time.time() - start_time
-                # print('[timing] {}'.format(duration))
-                #
-                # # save to file
-                # if boxes is not None:
-                #     res_file = os.path.join(
-                #         FLAGS.output_dir,
-                #         '{}.txt'.format(
-                #             os.path.basename(im_fn).split('.')[0]))
-                #
-                #     with open(res_file, 'w') as f:
-                #         for box in boxes:
-                #             # to avoid submitting errors
-                #             box = sort_poly(box.astype(np.int32))
-                #             if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
-                #                 continue
-                #             f.write('{},{},{},{},{},{},{},{}\r\n'.format(
-                #                 box[0, 0], box[0, 1], box[1, 0], box[1, 1], box[2, 0], box[2, 1], box[3, 0], box[3, 1],
-                #             ))
-                #             # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
-                #             cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
+                            cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
 
 
                 if not FLAGS.no_write_images:
