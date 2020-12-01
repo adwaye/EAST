@@ -227,7 +227,7 @@ def main(argv=None):
                             os.path.basename(im_fn).split('.')[0]))
 
                     with open(res_file, 'w') as f:
-                        im = np.ascontiguousarray(im,dtype=np.uint8)
+                        im = np.ascontiguousarray(im,dtype=np.int32)
                         for box in boxes:
                             # to avoid submitting errors
                             box = sort_poly(box.astype(np.int32))
@@ -241,15 +241,18 @@ def main(argv=None):
                             print("==============================SHAPE====================")
                             print(im.shape)
                             print(im[:,:,::-1].shape)
-                            cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
+                            cv2.fillConvexPoly(im[:,:,::-1].astype(np.int32),[box.astype(np.int32).reshape((-1,1,2))],
+                                               color=(255,
+                                                                                                              255,0))
 
 
                 if not FLAGS.no_write_images:
                     img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
                     cv2.imwrite(img_path, im[:, :, ::-1])
+    return im
 
 if __name__ == '__main__':
-    tf.app.run()
+    im = tf.app.run()
 
 
     #folder will be like patient name study number and then will have hands, feet inside.
