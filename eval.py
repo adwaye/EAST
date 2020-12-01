@@ -185,6 +185,7 @@ def main(argv=None):
                     with open(res_file, 'w') as f:
                         for box in boxes:
                             # to avoid submitting errors
+                            print('box shape for original is {}'.format(box.shape))
                             box = sort_poly(box.astype(np.int32))
                             if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
                                 continue
@@ -230,6 +231,7 @@ def main(argv=None):
                         for box in boxes:
                             # to avoid submitting errors
                             box = sort_poly(box.astype(np.int32))
+                            print('box shape for rotated is {}'.format(box.shape))
                             if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
                                 continue
                             f.write('{},{},{},{},{},{},{},{}\r\n'.format(
