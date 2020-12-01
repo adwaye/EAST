@@ -254,7 +254,7 @@ def main(argv=None):
     return im
 
 if __name__ == '__main__':
-    im = tf.app.run()
+    tf.app.run()
 
 
     #folder will be like patient name study number and then will have hands, feet inside.
