@@ -248,6 +248,8 @@ def main(argv=None):
 
                 if not FLAGS.no_write_images:
                     img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
+                    print('rotating image back')
+                    im = cv2.rotate(im,cv2.cv2.ROTATE_90_ANTICLOCKWISE)
                     cv2.imwrite(img_path, im[:, :, ::-1])
     return im
 
