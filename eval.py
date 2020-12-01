@@ -39,6 +39,23 @@ def get_images():
     print('Find {} images'.format(len(files)))
     return files
 
+def get_images_new():
+    '''
+    find image files in test data path
+    :return: list of files found
+    '''
+    files = []
+    exts = ['jpg', 'png', 'jpeg', 'JPG']
+    for parent, dirnames, filenames in os.walk(FLAGS.test_data_path):
+        for filename in filenames:
+            for ext in exts:
+                if filename.endswith(ext):
+                    files.append(os.path.join(parent, filename))
+                    break
+    print('Find {} images'.format(len(files)))
+    return files
+
+
 
 def resize_image(im, max_side_len=2400):
     '''
@@ -125,8 +142,148 @@ def sort_poly(p):
     else:
         return p[[0, 3, 2, 1]]
 
-
 def main(argv=None):
+    import os
+    os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu_list
+
+
+    try:
+        os.makedirs(FLAGS.output_dir)
+    except OSError as e:
+        if e.errno != 17:
+            raise
+
+    with tf.get_default_graph().as_default():
+        input_images = tf.placeholder(tf.float32, shape=[None, None, None, 3], name='input_images')
+        global_step = tf.get_variable('global_step', [], initializer=tf.constant_initializer(0), trainable=False)
+
+        f_score, f_geometry = model.model(input_images, is_training=False)
+
+        variable_averages = tf.train.ExponentialMovingAverage(0.997, global_step)
+        saver = tf.train.Saver(variable_averages.variables_to_restore())
+
+        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+            ckpt_state = tf.train.get_checkpoint_state(FLAGS.checkpoint_path)
+            model_path = os.path.join(FLAGS.checkpoint_path, os.path.basename(ckpt_state.model_checkpoint_path))
+            print('Restore from {}'.format(model_path))
+            saver.restore(sess, model_path)
+
+            im_fn_list = get_images() #lists all subfiles that are pictures
+            for im_fn in im_fn_list:
+                im = cv2.imread(im_fn)[:, :, ::-1]
+                start_time = time.time()
+                im_resized, (ratio_h, ratio_w) = resize_image(im)
+
+                timer = {'net': 0, 'restore': 0, 'nms': 0}
+                start = time.time()
+                score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
+                timer['net'] = time.time() - start
+
+                boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
+                print('{} : net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
+                    im_fn, timer['net']*1000, timer['restore']*1000, timer['nms']*1000))
+
+                if boxes is not None:
+                    boxes = boxes[:, :8].reshape((-1, 4, 2))
+                    boxes[:, :, 0] /= ratio_w
+                    boxes[:, :, 1] /= ratio_h
+
+                duration = time.time() - start_time
+                print('[timing] {}'.format(duration))
+
+                # save to file
+                if boxes is not None:
+                    res_file = os.path.join(
+                        FLAGS.output_dir,
+                        '{}.txt'.format(
+                            os.path.basename(im_fn).split('.')[0]))
+
+                    with open(res_file, 'w') as f:
+                        for box in boxes:
+                            # to avoid submitting errors
+                            print('box shape for original is {}'.format(box.shape))
+                            box = sort_poly(box.astype(np.int32))
+                            if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
+                                continue
+                            f.write('{},{},{},{},{},{},{},{}\r\n'.format(
+                                box[0, 0], box[0, 1], box[1, 0], box[1, 1], box[2, 0], box[2, 1], box[3, 0], box[3, 1],
+                            ))
+                            # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
+
+                            cv2.fillPoly(im[:,:,::-1],[box.astype(np.int32).reshape((-1,1,2))],color=(255,255,0))
+
+
+                print('running on rotated image')
+                start_time = time.time()
+                im = cv2.rotate(im,cv2.cv2.ROTATE_90_CLOCKWISE)
+                im_resized, (ratio_h, ratio_w) = resize_image(im)
+
+                timer = {'net': 0, 'restore': 0, 'nms': 0}
+                start = time.time()
+                score, geometry = sess.run([f_score, f_geometry], feed_dict={input_images: [im_resized]})
+                timer['net'] = time.time() - start
+
+                boxes, timer = detect(score_map=score, geo_map=geometry, timer=timer)
+                print('{} : net {:.0f}ms, restore {:.0f}ms, nms {:.0f}ms'.format(
+                    im_fn, timer['net']*1000, timer['restore']*1000, timer['nms']*1000))
+
+                if boxes is not None:
+                    boxes = boxes[:, :8].reshape((-1, 4, 2))
+                    boxes[:, :, 0] /= ratio_w
+                    boxes[:, :, 1] /= ratio_h
+
+                duration = time.time() - start_time
+                print('[timing] {}'.format(duration))
+
+                # save to file
+                if boxes is not None:
+                    res_file = os.path.join(
+                        FLAGS.output_dir,
+                        '{}.txt'.format(
+                            os.path.basename(im_fn).split('.')[0]))
+
+                    with open(res_file, 'w') as f:
+                        im = np.ascontiguousarray(im,dtype=np.int32)
+                        for box in boxes:
+                            # to avoid submitting errors
+                            box = sort_poly(box.astype(np.int32))
+                            print('box shape for rotated is {}'.format(box.shape))
+                            if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3]-box[0]) < 5:
+                                continue
+                            f.write('{},{},{},{},{},{},{},{}\r\n'.format(
+                                box[0, 0], box[0, 1], box[1, 0], box[1, 1], box[2, 0], box[2, 1], box[3, 0], box[3, 1],
+                            ))
+                            # cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True, color=(255, 255, 0), thickness=1)
+                            print("==============================SHAPE====================")
+                            print(im.shape)
+                            print(im[:,:,::-1].shape)
+                            im = cv2.fillPoly(im[:,:,::-1].astype(np.int32),[box.astype(np.int32).reshape((-1,1,2))],
+                                               color=(255,
+                                                                                                              255,0))
+
+
+                if not FLAGS.no_write_images:
+                    import re
+                    seg_name  = im_fn.split('/')
+                    reg = '\d+'
+                    res = re.search(reg,seg_name[-1])
+                    img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
+                    if res is not None:
+                        pat_id  = res.group(0)
+                        res     = re.search('\d{4}',os.path.basename(im_fn))
+                        if res is not None:
+                            year =  res.group(0)
+                            file_name = pat_id+'_'+year+im_fn.split('.')[-1]
+                            img_path  = os.path.join(FLAGS.output_dir, file_name)
+
+                    print('rotating image back')
+                    im = cv2.rotate(im,cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    cv2.imwrite(img_path, im[:, :, ::-1])
+    return im
+
+
+
+def main_old(argv=None):
     import os
     os.environ['CUDA_VISIBLE_DEVICES'] = FLAGS.gpu_list
 
@@ -249,7 +406,7 @@ def main(argv=None):
                 if not FLAGS.no_write_images:
                     img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
                     print('rotating image back')
-                    im = cv2.rotate(im,cv2.cv2.ROTATE_90_ANTICLOCKWISE)
+                    im = cv2.rotate(im,cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
                     cv2.imwrite(img_path, im[:, :, ::-1])
     return im
 
