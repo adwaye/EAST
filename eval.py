@@ -267,13 +267,17 @@ def main(argv=None):
                     seg_name  = im_fn.split('/')
                     reg = '\d+'
                     res = re.search(reg,seg_name[-2])
+                    if 'hands' in seg_name[-1]: organ = 'hands'
+                    elif 'feet' in seg_name[-1]: organ = 'feet'
+                    else: organ =''
+
                     # img_path = os.path.join(FLAGS.output_dir, os.path.basename(im_fn))
                     if res is not None:
                         pat_id  = res.group(0)
                         res     = re.search('\d{4}',os.path.basename(im_fn))
                         if res is not None:
                             year =  res.group(0)
-                            file_name = pat_id+'_'+year+'.'+im_fn.split('.')[-1]
+                            file_name = pat_id+'_'+year+'_'+organ+'.'+im_fn.split('.')[-1]
                             img_path  = os.path.join(FLAGS.output_dir, file_name)
 
                     print('rotating image back')
